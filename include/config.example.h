@@ -13,11 +13,11 @@
 // When disabled, the device will only send UPS data via USB Serial
 #define MQTT_ENABLED false
 
-// Heartbeat-only mode - Set to true to send only heartbeat messages
-// Useful for testing TrueNAS serial connection without full UPS data
-#define HEARTBEAT_ONLY_MODE false
+// Fake battery full - Set to true to always report battery at 100% and "OL" status
+// Useful for testing TrueNAS integration without a real battery
+#define FAKE_BATTERY_FULL false
 
-// Heartbeat interval in milliseconds
+// Heartbeat interval in milliseconds (for periodic status updates)
 #define HEARTBEAT_INTERVAL 5000
 
 //============================================================================
