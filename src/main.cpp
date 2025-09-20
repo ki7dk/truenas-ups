@@ -415,11 +415,24 @@ void loop() {
       reportedRuntime = 3600; // 1 hour in seconds
       reportedStatus = "OL"; // Online status
     #else
-      // Use real battery data
-      reportedBatteryPercent = batteryPercentage;
-      reportedVoltage = calibratedVoltage;
-      reportedRuntime = timeRemaining * 60; // Convert minutes to seconds
-      reportedStatus = upsStatus;
+      // Use real battery data but force critical values if below threshold
+      if (calibratedVoltage <= criticalVoltageThreshold) {
+        // Force extremely low values to ensure TrueNAS initiates shutdown
+        reportedBatteryPercent = 0;
+        reportedVoltage = 0.1; // Nearly depleted battery
+        reportedRuntime = 10;  // Only 10 seconds left
+        reportedStatus = "OB DISCHRG LB"; // On Battery, Discharging, Low Battery (critical)
+
+        if (DEBUG_MODE) {
+          DEBUG_PRINTLN("CRITICAL VOLTAGE REACHED! Forcing shutdown values.");
+        }
+      } else {
+        // Normal operation
+        reportedBatteryPercent = batteryPercentage;
+        reportedVoltage = calibratedVoltage;
+        reportedRuntime = timeRemaining * 60; // Convert minutes to seconds
+        reportedStatus = upsStatus;
+      }
     #endif
 
     if (DEBUG_MODE) {

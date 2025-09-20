@@ -339,22 +339,32 @@ The screenshot above shows a typical configuration for the ESP8266 DIY UPS in Tr
 
 ### Configure the Shutdown Policy
 
-This is the most critical part that tells TrueNAS when to start the shutdown process:
+Unfortunately, TrueNAS lacks granular UPS threshold settings, making it difficult to customize when exactly a shutdown should occur. The system will shut down based on fixed internal criteria that cannot be modified through the UI.
+
+To work around this limitation, this project includes a special "forced shutdown" feature:
 
 1. In the UPS configuration window, go to the "Shutdown" section
 
-2. Set the **Battery Level** field to a safe threshold (e.g., 10%)
-   - This tells TrueNAS to shut down once the battery level reaches this percentage
+2. Set the **Shutdown Mode** to `Local` so the TrueNAS server shuts down itself
 
-3. You can also set a **Shutdown Timer** which tells the server to shut down after
-   a specific number of seconds once power is lost
+3. Click **Save** to apply your settings
 
-4. Set the **Shutdown Mode** to `Local` so the TrueNAS server shuts down itself
+#### How the Forced Shutdown Works
 
-5. Click **Save** to apply your settings
+To ensure that TrueNAS initiates a shutdown when your battery reaches a critical level:
 
-TrueNAS will then automatically start the service and monitor your ESP8266 UPS monitor
-for power loss or low battery signals.
+1. The ESP8266 continuously monitors the battery voltage
+
+2. When the voltage drops below `UPS_CRITICAL_VOLTAGE_THRESHOLD` (defined in config.h):
+   - The code automatically forces extreme readings:
+     - Battery level: 0%
+     - Battery voltage: 0.1V
+     - Runtime remaining: 10 seconds
+     - Status: "OB DISCHRG LB" (On Battery, Discharging, Low Battery)
+
+3. These extreme values trigger TrueNAS to initiate an emergency shutdown regardless of its internal settings
+
+This approach bypasses TrueNAS's lack of configurable thresholds and ensures your server shuts down safely when your actual battery voltage reaches the level you've defined as critical.
 
 > Note: TrueNAS unfortunately does not currently have a UPS dashboard for visual monitoring. You'll need to use the command-line tools like `upsc` to check the UPS status.
 
@@ -442,6 +452,8 @@ The ESP8266 behavior is controlled through the `config.h` file in the C/C++ sour
 - `HEARTBEAT_INTERVAL`: Time in milliseconds between heartbeat messages (default: 5000 ms = 5 seconds)
 - `UPS_LOW_VOLTAGE_THRESHOLD`: Voltage at which to send a warning (default: 13.6V)
 - `UPS_CRITICAL_VOLTAGE_THRESHOLD`: Voltage at which to trigger shutdown (default: 12.0V)
+  - When voltage drops below this value, the code forces extreme low readings to ensure TrueNAS initiates shutdown
+  - This is the most critical setting for protecting your system from an unexpected power loss
 - `UPS_SHUTDOWN_DELAY`: Delay in seconds before shutdown after critical threshold (default: 30)
 
 ## Operational States
